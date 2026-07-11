@@ -72,3 +72,27 @@ Le VPN Azure nécessite :
     une Public IP pour le VPN Gateway (pas pour les VM)
     du temps de provisioning (15–30 min)
 
+
+Créer une branche
+        |
+        v
+Pull Request vers main
+        |
+        v
+GitHub Actions
+        |
+        └── terraform plan
+              |
+              v
+        Review humaine
+              |
+              v
+        Merge vers main
+              |
+              v
+GitHub Actions
+        |
+        └── terraform apply
+              |
+              v
+        Approval manuel avant apply

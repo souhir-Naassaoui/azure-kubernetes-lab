@@ -1,0 +1,85 @@
+name: Ansible Kubernetes Provisioning
+
+
+on:
+
+  workflow_run:
+
+    workflows:
+      - Terraform Apply
+
+    types:
+      - completed
+
+
+
+jobs:
+
+
+  ansible:
+
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+
+      - name: Install Ansible
+        run: |
+
+          sudo apt update
+
+          sudo apt install -y ansible
+
+
+
+      - name: Configure SSH
+
+        run: |
+
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+
+          chmod 600 ~/.ssh/id_rsa
+
+
+
+      - name: Create inventory
+
+        run: |
+
+          mkdir -p ansible/inventory
+
+          cat <<EOF > ansible/inventory/inventory.ini
+
+          [master]
+
+          ${{ secrets.MASTER_IP }}
+
+
+          [worker]
+
+          ${{ secrets.WORKER_IP }}
+
+          EOF
+
+
+
+      - name: Run Ansible
+
+        working-directory: ansible
+
+        run: |
+
+          ansible-playbook \
+          -i inventory/inventory.ini \
+          playbooks/site.yml

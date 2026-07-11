@@ -17,19 +17,44 @@ resource "azurerm_network_security_group" "nsg" {
   resource_group_name = azurerm_resource_group.k8s_lab.name
 }
 
-resource "azurerm_network_security_rule" "ssh" {
-  name                   = "allow-ssh"
-  priority               = 100
-  direction              = "Inbound"
-  access                 = "Allow"
-  protocol               = "Tcp"
-  source_port_range      = "*"
+# resource "azurerm_network_security_rule" "ssh" {
+#   name                   = "allow-ssh"
+#   priority               = 100
+#   direction              = "Inbound"
+#   access                 = "Allow"
+#   protocol               = "Tcp"
+#   source_port_range      = "*"
+#   destination_port_range = "22"
+
+#   source_address_prefix      = "*"
+#   destination_address_prefix = "*"
+
+#   resource_group_name         = azurerm_resource_group.k8s_lab.name
+#   network_security_group_name = azurerm_network_security_group.nsg.name
+# }
+resource "azurerm_network_security_rule" "ssh_master" {
+
+  name = "allow-ssh-master"
+
+  priority = 100
+
+  direction = "Inbound"
+
+  access = "Allow"
+
+  protocol = "Tcp"
+
+  source_port_range = "*"
+
   destination_port_range = "22"
 
-  source_address_prefix      = "*"
+  source_address_prefix = "*"
+
   destination_address_prefix = "*"
 
-  resource_group_name         = azurerm_resource_group.k8s_lab.name
+
+  resource_group_name = azurerm_resource_group.k8s_lab.name
+
   network_security_group_name = azurerm_network_security_group.nsg.name
 }
 
@@ -59,12 +84,12 @@ resource "azurerm_public_ip" "master_ip" {
   allocation_method   = "Dynamic"
 }
 
-resource "azurerm_public_ip" "worker_ip" {
-  name                = "pip-worker"
-  location            = azurerm_resource_group.k8s_lab.location
-  resource_group_name = azurerm_resource_group.k8s_lab.name
-  allocation_method   = "Dynamic"
-}
+# resource "azurerm_public_ip" "worker_ip" {
+#   name                = "pip-worker"
+#   location            = azurerm_resource_group.k8s_lab.location
+#   resource_group_name = azurerm_resource_group.k8s_lab.name
+#   allocation_method   = "Dynamic"
+# }
 
 resource "azurerm_network_interface" "master_nic" {
   name                = "nic-master"
@@ -80,16 +105,33 @@ resource "azurerm_network_interface" "master_nic" {
 
 }
 
+# resource "azurerm_network_interface" "worker_nic" {
+#   name                = "nic-worker"
+#   location            = azurerm_resource_group.k8s_lab.location
+#   resource_group_name = azurerm_resource_group.k8s_lab.name
+
+#   ip_configuration {
+#     name                          = "internal"
+#     subnet_id                     = azurerm_subnet.subnet.id
+#     private_ip_address_allocation = "Dynamic"
+#     public_ip_address_id          = azurerm_public_ip.worker_ip.id
+#   }
+# }
 resource "azurerm_network_interface" "worker_nic" {
+
   name                = "nic-worker"
   location            = azurerm_resource_group.k8s_lab.location
   resource_group_name = azurerm_resource_group.k8s_lab.name
 
+
   ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.subnet.id
+
+    name = "internal"
+
+    subnet_id = azurerm_subnet.subnet.id
+
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.worker_ip.id
+
   }
 }
 

@@ -24,7 +24,9 @@
     - common
     - containerd
     - kubernetes
-  
+  # kubeadm version
+  # kubectl version --client
+  # kubelet --version
 - hosts: master
   become: yes
 
@@ -36,3 +38,8 @@
 
   roles:
     - worker
+
+- hosts: master
+  become: true
+  roles:
+    - network

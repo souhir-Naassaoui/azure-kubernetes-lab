@@ -1,0 +1,52 @@
+---
+# creates ? Sans cette option :
+# Ansible
+#       │
+#       ▼
+# kubeadm init
+
+# sera exécuté à chaque playbook.
+
+# Or un cluster ne doit être initialisé qu'une seule fois.
+
+# Avec creates :
+
+# admin.conf existe ?
+
+# Oui
+#  │
+#  └── on ignore la tâche
+
+# Non
+#  │
+#  └── kubeadm init
+- name: Initialize Kubernetes control plane
+  ansible.builtin.command:
+    cmd: kubeadm init --pod-network-cidr=192.168.0.0/16 # on réserve une plage d'adresses IP pour les pods.
+    creates: /etc/kubernetes/admin.conf
+
+- name: Create .kube directory
+  ansible.builtin.file:
+    path: /home/azureuser/.kube
+    state: directory
+    owner: azureuser
+    group: azureuser
+    mode: "0755"
+
+- name: Copy admin.conf
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/azureuser/.kube/config # on le copiant ici, on peut faire kubectl get nodes avec notre utilisateur azureuser.
+    remote_src: true
+    owner: azureuser
+    group: azureuser
+    mode: "0600"
+
+- name: Generate join command
+  ansible.builtin.command:
+    cmd: kubeadm token create --print-join-command
+  register: join_command
+
+- name: Save join command
+  ansible.builtin.set_fact:
+    kube_join_command: "{{ join_command.stdout }}"

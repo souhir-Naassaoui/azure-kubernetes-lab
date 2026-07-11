@@ -1,0 +1,58 @@
+---
+# Creation du dossier : Ubuntu stocke désormais les clés GPG des dépôts dans ce dossier.
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+# On télécharge la clé officielle Kubernetes. Sans cette clé, Ubuntu refusera d'installer les paquets.
+- name: Download Kubernetes repository GPG key
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key
+    dest: /tmp/kubernetes.key
+    mode: "0644"
+
+# La clé téléchargée est au format ASCII. APT attend une clé binaire.
+- name: Convert GPG key
+  ansible.builtin.command:
+    cmd: >
+      gpg --dearmor
+      -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      /tmp/kubernetes.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /
+    mode: "0644"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install Kubernetes packages
+  ansible.builtin.apt:
+    name:
+      - kubelet #Agent qui tourne sur chaque nœud.
+      - kubeadm #Construit le cluster.
+      - kubectl #Client d'administration.
+    state: present
+
+# On évite qu'un simple : apt upgrade mette à jour Kubernetes vers une version incompatible.
+- name: Hold Kubernetes packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+# Le service démarrera automatiquement au prochain redémarrage.
+- name: Enable kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: yes

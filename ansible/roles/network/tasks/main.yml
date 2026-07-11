@@ -1,0 +1,16 @@
+---
+- name: Install Calico
+  ansible.builtin.command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.30.3/manifests/calico.yaml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+# Le manifeste calico.yaml contient de nombreuses ressources Kubernetes, notamment :
+
+# des CustomResourceDefinitions (CRD) ;
+# un DaemonSet calico-node (un pod sur chaque nœud) ;
+# un Deployment calico-kube-controllers ;
+# des ServiceAccounts ;
+# des ClusterRoles et ClusterRoleBindings.
+
+# Le DaemonSet est particulièrement important : il garantit qu'un pod Calico s'exécute sur chaque nœud.
