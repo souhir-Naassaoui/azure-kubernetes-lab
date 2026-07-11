@@ -1,0 +1,38 @@
+# contient les actions
+# Sur toutes les machines :
+# → mets à jour apt
+# → installe containerd
+# - hosts: all  # agit sur toutes les vms, ou bien hosts: master
+#   become: yes # eq a sudo
+
+#   tasks: # les taches commencent ici
+
+#     - name: Update apt
+#       apt:
+#         update_cache: yes
+    
+#     - name: Install containerd
+#       apt:
+#         name: containerd
+#         state: present # Ansible vérifie la presence, si present alors ne fait rien, sinon install
+
+# ##########################
+- hosts: all
+  become: true
+
+  roles:
+    - common
+    - containerd
+    - kubernetes
+  
+- hosts: master
+  become: yes
+
+  roles:
+    - master
+
+- hosts: worker
+  become: true
+
+  roles:
+    - worker

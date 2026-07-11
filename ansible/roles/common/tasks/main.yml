@@ -1,0 +1,255 @@
+---
+# Première tâche : mettre à jour les paquets
+# Avant d'installer quoi que ce soit, Ubuntu doit connaître les dernières versions disponibles.
+# À la main tu aurais fait :
+# sudo apt update
+# Ansible le traduit avec le module apt
+- name: Update apt update_cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+# Deuxième tâche : installer les paquets utiles
+# On ne lance jamais :
+# apt install curl
+# apt install ca-certificates
+# ...
+# On décrit simplement l'état souhaité.
+# C'est toute la philosophie d'Ansible.
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+    state: present
+
+# Troisième tâche : désactiver le swap
+# Kubernetes refuse de fonctionner avec le swap activé.
+# À la main : sudo swapoff -a
+- name: Disable swap 
+  ansible.builtin.command: swapoff -a # Pourquoi command et pas un module ? Parce qu'il n'existe pas de module Ansible dédié au swap. Quand il n'y a pas de module, on utilise command ou shell.
+
+# Quatrième tâche : empêcher le swap au redémarrage
+# On modifie donc /etc/fstab , qui modifie un fichier sans utiliser sed
+- name: Disable swapp in fstab
+  ansible.builtin.replace: #replace: un autre module d ansible
+    path: /etc/fstab 
+    regexp: '^(.*swap.*)$'
+    replace: '# \1'
+
+# Cinquième tâche : charger les modules Linux
+# a la main on fait modprobe overlay et modprobe br_netfilter
+- name: Load overlay module
+  community.general.modprobe:
+    name: overlay 
+    state: present 
+
+- name: Load br_netfilter module
+  community.general.modprobe:
+    name: br_netfilter 
+    state: present 
+
+# Sixième tâche : configurer sysctl
+# À la main :
+# echo "net.bridge.bridge-nf-call-iptables = 1"
+# echo "net.ipv4.ip_forward = 1"
+- name: Enable Kubernetes networking
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present 
+    reload: true
+
+
+
+# Maintenant, les tâches Kubernetes
+
+# Je vais les replacer dans l'ordre où Kubernetes en a réellement besoin.
+
+# Le démarrage d'un nœud ressemble à ceci :
+
+# Linux
+#     │
+#     ▼
+# Container Runtime (containerd)
+#     │
+#     ▼
+# Kubelet
+#     │
+#     ▼
+# Kubeadm
+#     │
+#     ▼
+# API Server
+#     │
+#     ▼
+# Pods
+
+# Toutes les tâches de common préparent Linux pour que cette chaîne fonctionne.
+
+# 1. Pourquoi installer ces paquets ?
+# curl
+# apt-transport-https
+# ca-certificates
+# software-properties-common
+
+## curl
+# Tu l'utiliseras pour télécharger des fichiers.
+# Exemple :
+# curl https://...
+# Quand on installe Kubernetes, on récupère souvent des dépôts, des clés GPG ou des manifests avec curl.
+
+## apt-transport-https
+# Par défaut, apt utilisait historiquement HTTP.
+# Les dépôts Kubernetes utilisent HTTPS.
+# Donc Ubuntu doit savoir télécharger des paquets via HTTPS.
+
+## ca-certificates
+# Quand Ubuntu contacte :
+# un dépôt Kubernetes,
+# un registre de conteneurs,
+# un serveur HTTPS,
+# il doit vérifier les certificats TLS.
+# Sans ce paquet, les connexions HTTPS peuvent échouer.
+
+## software-properties-common
+# Ce paquet fournit notamment :
+# add-apt-repository
+# qui permet d'ajouter facilement de nouveaux dépôts.
+
+
+# 2. Pourquoi désactiver le swap ?
+
+# C'est une exigence de Kubernetes.
+
+# Le composant qui vérifie cela est :
+
+# kubelet
+
+# Avant de démarrer, il regarde :
+
+# Swap activé ?
+
+# Oui
+
+# ↓
+
+# Erreur
+
+# ↓
+
+# Je refuse de démarrer
+
+# Pourquoi ?
+
+# Parce que Kubernetes planifie les ressources (mémoire, CPU) de manière prédictible. Si Linux commence à déplacer des pages mémoire sur le disque (swap), les performances deviennent beaucoup moins prévisibles.
+
+
+# 3. Pourquoi modifier /etc/fstab ?
+
+# La commande :
+
+# swapoff -a
+
+# désactive le swap uniquement jusqu'au prochain redémarrage.
+
+# Au redémarrage :
+
+# fstab
+
+# ↓
+
+# réactive le swap
+
+# En commentant la ligne dans /etc/fstab, on rend la désactivation permanente.
+
+
+# 4. Pourquoi charger overlay ?
+
+# C'est le premier point qui touche directement les conteneurs.
+
+# Imagine deux images Docker :
+
+# Ubuntu
+
+# +
+
+# Nginx
+
+# On ne veut pas recopier complètement Ubuntu pour chaque image.
+
+# On empile des couches ("layers").
+
+# Le système de fichiers qui permet cela est un Overlay Filesystem.
+
+# Le module du noyau correspondant est :
+
+# overlay
+
+# Containerd s'appuie dessus pour gérer efficacement les systèmes de fichiers des conteneurs.
+
+# 5. Pourquoi br_netfilter ?
+
+# C'est essentiel pour Kubernetes.
+
+# Imagine :
+
+# Pod A
+#       │
+#       ▼
+# Bridge Linux
+#       │
+#       ▼
+# Pod B
+
+# Par défaut, lorsqu'un paquet traverse un bridge Linux, les règles iptables ne sont pas toujours appliquées.
+
+# Kubernetes utilise pourtant massivement iptables (ou nftables selon les configurations) pour :
+
+# les Services,
+# le NAT,
+# les politiques réseau,
+# le routage des pods.
+
+# Le module :
+
+# br_netfilter
+
+# fait en sorte que les paquets traversant un bridge soient également vus par le pare-feu du noyau.
+
+# Sans lui, beaucoup de règles réseau Kubernetes ne fonctionneraient pas correctement.
+
+# 6. Pourquoi sysctl ?
+
+# Le noyau Linux possède des paramètres configurables.
+
+# Par exemple :
+
+# net.ipv4.ip_forward
+
+# Par défaut :
+
+# 0
+
+# Donc :
+
+# Paquet reçu
+
+# ↓
+
+# Je ne le retransmets pas
+
+# Mais un nœud Kubernetes agit comme un routeur entre les pods.
+
+# Il doit pouvoir transférer les paquets.
+
+# On active donc :
+
+# net.ipv4.ip_forward = 1
+
+# Il existe aussi un autre paramètre très courant :
+
+# net.bridge.bridge-nf-call-iptables = 1
+
+# Il demande au noyau d'appliquer les règles iptables aux paquets qui traversent un bridge. Là encore, c'est indispensable pour le fonctionnement des Services et de nombreux plugins réseau.
