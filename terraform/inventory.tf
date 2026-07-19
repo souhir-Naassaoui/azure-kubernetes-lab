@@ -29,4 +29,4 @@ ansible_ssh_common_args='-o ProxyJump=azureuser@${azurerm_public_ip.master_ip.ip
 
 EOF
 
-}
+} 
