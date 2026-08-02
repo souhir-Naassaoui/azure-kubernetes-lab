@@ -81,5 +81,5 @@ jobs:
         run: |
 
           ansible-playbook \
-          -i ansible/inventory/inventory.ini \
-          ansible/playbooks/site.yml
+          -i inventory/inventory.ini \
+          site.yml
