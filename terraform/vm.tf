@@ -139,7 +139,7 @@ resource "azurerm_linux_virtual_machine" "master" {
   name                = "vm-k8s-master"
   resource_group_name = azurerm_resource_group.k8s_lab.name
   location            = azurerm_resource_group.k8s_lab.location
-  size                = "Standard_B1ms"
+  size                = "Standard_B2pts_v2"
 
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.master_nic.id]
@@ -168,7 +168,7 @@ resource "azurerm_linux_virtual_machine" "worker" {
   name                = "vm-k8s-worker"
   resource_group_name = azurerm_resource_group.k8s_lab.name
   location            = azurerm_resource_group.k8s_lab.location
-  size                = "Standard_B2s"
+  size                = "Standard_B2pts_v2"
 
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.worker_nic.id]
