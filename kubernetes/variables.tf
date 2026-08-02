@@ -1,5 +1,5 @@
 variable "location" {
-    default = "Canada Central"
+    default = "Canada East"
 }
 
 variable "admin_username" {

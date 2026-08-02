@@ -81,7 +81,7 @@ resource "azurerm_public_ip" "master_ip" {
   name                = "pip-master"
   location            = azurerm_resource_group.k8s_lab.location
   resource_group_name = azurerm_resource_group.k8s_lab.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
 }
 
 # resource "azurerm_public_ip" "worker_ip" {
