@@ -1,5 +1,5 @@
 variable "location" {
-    default = "France Central"
+    default = "swedencentral"
 }
 
 variable "admin_username" {
