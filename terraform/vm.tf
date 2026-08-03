@@ -194,7 +194,7 @@ resource "azurerm_linux_virtual_machine" "worker" {
 }
 resource "azurerm_network_security_rule" "kubernetes_api" {
   name      = "allow-kubernetes-api"
-  priority  = 110
+  priority  = 120
   direction = "Inbound"
   access    = "Allow"
   protocol  = "Tcp"
