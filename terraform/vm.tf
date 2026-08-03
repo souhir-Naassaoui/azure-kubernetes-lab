@@ -192,4 +192,19 @@ resource "azurerm_linux_virtual_machine" "worker" {
     version   = "latest"
   }
 }
+resource "azurerm_network_security_rule" "kubernetes_api" {
+  name                        = "allow-kubernetes-api"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
 
+  source_port_range           = "*"
+  destination_port_range      = "6443"
+
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+
+  resource_group_name         = azurerm_resource_group.k8s_lab.name
+  network_security_group_name = azurerm_network_security_group.nsg.name
+}
