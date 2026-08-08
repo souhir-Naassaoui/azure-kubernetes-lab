@@ -139,7 +139,7 @@ resource "azurerm_linux_virtual_machine" "master" {
   name                = "vm-k8s-master"
   resource_group_name = azurerm_resource_group.k8s_lab.name
   location            = azurerm_resource_group.k8s_lab.location
-  size                = "Standard_B2ats_v2"
+  size                = "Standard_D2s_v3"
 
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.master_nic.id]
@@ -168,7 +168,7 @@ resource "azurerm_linux_virtual_machine" "worker" {
   name                = "vm-k8s-worker"
   resource_group_name = azurerm_resource_group.k8s_lab.name
   location            = azurerm_resource_group.k8s_lab.location
-  size                = "Standard_B2ats_v2"
+  size                = "Standard_D2s_v3"
 
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.worker_nic.id]
@@ -192,4 +192,19 @@ resource "azurerm_linux_virtual_machine" "worker" {
     version   = "latest"
   }
 }
+resource "azurerm_network_security_rule" "kubernetes_api" {
+  name      = "allow-kubernetes-api"
+  priority  = 120
+  direction = "Inbound"
+  access    = "Allow"
+  protocol  = "Tcp"
 
+  source_port_range      = "*"
+  destination_port_range = "6443"
+
+  source_address_prefix      = "*"
+  destination_address_prefix = "*"
+
+  resource_group_name         = azurerm_resource_group.k8s_lab.name
+  network_security_group_name = azurerm_network_security_group.nsg.name
+}
