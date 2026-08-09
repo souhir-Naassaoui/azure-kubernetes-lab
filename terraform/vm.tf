@@ -158,8 +158,8 @@ resource "azurerm_linux_virtual_machine" "master" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "24_04-lts-arm64-gen2"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server-arm64"
     version   = "latest"
   }
 }
