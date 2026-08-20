@@ -93,7 +93,7 @@ resource "azurerm_public_ip" "master_ip" {
 
 resource "azurerm_network_interface" "master_nic" {
   name                = "nic-master"
-  location            = azurerm_resource_group.k8s_lab.location
+  location            =  "francecentral" //azurerm_resource_group.k8s_lab.location
   resource_group_name = azurerm_resource_group.k8s_lab.name
 
   ip_configuration {
