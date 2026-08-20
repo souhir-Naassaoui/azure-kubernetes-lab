@@ -3,5 +3,5 @@
 # k8s_lab : nom logique utilisé dans Terraform.
 resource "azurerm_resource_group" "k8s_lab" {
   name     = "rg-k8s-lab"    //nom réel qui apparaîtra dans Azure.
-  location = "swedencentral" //région où sera créé le Resource Group
+  location = "germanywestcentral" //région où sera créé le Resource Group
 }
