@@ -138,7 +138,7 @@ resource "azurerm_network_interface" "worker_nic" {
 resource "azurerm_linux_virtual_machine" "master" {
   name                = "vm-k8s-master"
   resource_group_name = azurerm_resource_group.k8s_lab.name
-  location            = azurerm_resource_group.k8s_lab.location
+  location            =  "francecentral" //azurerm_resource_group.k8s_lab.location
   size                = "Standard_B2pls_v2"
 
   admin_username        = "azureuser"
